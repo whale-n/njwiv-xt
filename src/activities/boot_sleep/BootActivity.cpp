@@ -3,7 +3,7 @@
  * ==========================================================
  * Modified to load a random BMP from the sleep screen directory
  * as background, then overlay a white "loading card" with the
- * CrossPoint logo, name, "Booting..." text, and version string.
+ * njwiv library logo, "loading..." text, and version string.
  *
  * Falls back to the original centered-logo boot screen when no
  * sleep screen images are found on the SD card.
@@ -30,7 +30,7 @@
 
 #include "CrossPointState.h"
 #include "fontIds.h"
-#include "images/Logo120.h"
+#include "images/NjwivLogo120.h"
 
 void BootActivity::onEnter() {
   Activity::onEnter();
@@ -219,20 +219,16 @@ void BootActivity::renderLoadingCard() const {
   renderer.fillRect(innerX, innerY, 1, innerH, true);                         // left
   renderer.fillRect(innerX + innerW - 1, innerY, 1, innerH, true);            // right
 
-  // ── Logo ──
-  // Center the 120x120 embedded logo in the upper portion of the card
+  // ── njwiv library logo ──
+  // Custom 120x120 bitmap with "njwiv" in Didot + "library" below
   const int logoSize = 120;
   const int logoX = cardX + (cardW - logoSize) / 2;
-  const int logoY = cardY + 20;
-  renderer.drawImage(Logo120, logoX, logoY, logoSize, logoSize);
+  const int logoY = cardY + (cardH - logoSize) / 2;  // vertically centered in card
+  renderer.drawImage(NjwivLogo120, logoX, logoY, logoSize, logoSize);
 
-  // ── "CrossPoint" text ──
-  renderer.drawCenteredText(UI_10_FONT_ID, cardY + 150,
-                            tr(STR_CROSSPOINT), true, EpdFontFamily::BOLD);
-
-  // ── "Booting..." below the card ──
+  // ── "loading..." below the card ──
   // Draw a small white pill behind the text so it's visible on dark backgrounds
-  const char* bootingText = tr(STR_BOOTING);
+  const char* bootingText = "loading...";
   const int bootTextW = renderer.getTextWidth(SMALL_FONT_ID, bootingText);
   const int bootTextH = renderer.getLineHeight(SMALL_FONT_ID);
   const int bootTextX = (pageWidth - bootTextW) / 2;
