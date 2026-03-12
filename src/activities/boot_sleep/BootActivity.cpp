@@ -103,16 +103,22 @@ bool BootActivity::tryRenderRandomBackground() const {
     return false;
   }
 
-  // Pick a random image, avoiding the last one shown at sleep
-  auto randomIndex = random(numFiles);
-  while (numFiles > 1 && APP_STATE.lastSleepImage != UINT8_MAX &&
-         randomIndex == APP_STATE.lastSleepImage) {
-    randomIndex = random(numFiles);
+  // Reuse the same image that was shown at sleep (visual continuity:
+  // sleep painting → boot with loading card overlay on same painting).
+  // Falls back to random if lastSleepImage is unset or out of range.
+  size_t imageIndex;
+  if (APP_STATE.lastSleepImage != UINT8_MAX &&
+      APP_STATE.lastSleepImage < numFiles) {
+    imageIndex = APP_STATE.lastSleepImage;
+    LOG_DBG("BOOT", "Reusing sleep image index %d", imageIndex);
+  } else {
+    imageIndex = random(numFiles);
+    LOG_DBG("BOOT", "No valid sleep image index, random pick %d", imageIndex);
   }
 
   // Open and render the chosen image
   const auto filepath =
-      std::string(sleepDir) + "/" + files[randomIndex];
+      std::string(sleepDir) + "/" + files[imageIndex];
   FsFile file;
   if (!Storage.openFileForRead("BOOT", filepath, file)) {
     LOG_ERR("BOOT", "Failed to open: %s", filepath.c_str());
@@ -120,7 +126,7 @@ bool BootActivity::tryRenderRandomBackground() const {
     return false;
   }
 
-  LOG_DBG("BOOT", "Boot background: %s", files[randomIndex].c_str());
+  LOG_DBG("BOOT", "Boot background: %s", files[imageIndex].c_str());
 
   Bitmap bitmap(file, true);  // enable dithering
   if (bitmap.parseHeaders() != BmpReaderError::Ok) {
