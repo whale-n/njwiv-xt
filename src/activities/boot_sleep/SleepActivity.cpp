@@ -1,5 +1,6 @@
 #include "SleepActivity.h"
 
+#include <algorithm>
 #include <Epub.h>
 #include <FsHelpers.h>
 #include <GfxRenderer.h>
@@ -75,6 +76,9 @@ void SleepActivity::renderCustomSleepScreen() const {
       files.emplace_back(filename);
       file.close();
     }
+    // Sort alphabetically so index-to-filename mapping is deterministic
+    // across reboots. BootActivity sorts the same way to reuse lastSleepImage.
+    std::sort(files.begin(), files.end());
     const auto numFiles = files.size();
     if (numFiles > 0) {
       // Generate a random number between 1 and numFiles

@@ -25,6 +25,7 @@
 #include <I18n.h>
 #include <Logging.h>
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -96,6 +97,11 @@ bool BootActivity::tryRenderRandomBackground() const {
     files.emplace_back(filename);
     file.close();
   }
+
+  // Sort alphabetically so index-to-filename mapping is deterministic.
+  // FAT32 dir.openNextFile() order depends on creation order, which can
+  // differ between runs. SleepActivity must sort the same way.
+  std::sort(files.begin(), files.end());
 
   const auto numFiles = files.size();
   if (numFiles == 0) {
@@ -220,34 +226,33 @@ void BootActivity::renderLoadingCard() const {
   renderer.fillRect(innerX + innerW - 1, innerY, 1, innerH, true);            // right
 
   // ── njwiv library logo ──
-  // Custom 120x120 bitmap with "njwiv" in Didot + "library" below
+  // Custom 120x120 bitmap with "njwiv" in Didot + "library" below.
+  // Uses drawIcon (calls drawImageTransparent) which:
+  //   1) Correctly rotates coordinates for portrait→landscape
+  //   2) Only draws black pixels, leaving white card underneath intact
   const int logoSize = 120;
   const int logoX = cardX + (cardW - logoSize) / 2;
   const int logoY = cardY + (cardH - logoSize) / 2;  // vertically centered in card
-  renderer.drawImage(NjwivLogo120, logoX, logoY, logoSize, logoSize);
+  renderer.drawIcon(NjwivLogo120, logoX, logoY, logoSize, logoSize);
 
   // ── "loading..." below the card ──
-  // Draw a small white pill behind the text so it's visible on dark backgrounds
+  // Rendered directly without background pill — the card provides
+  // enough visual anchoring and pills looked heavy on device.
   const char* bootingText = "loading...";
-  const int bootTextW = renderer.getTextWidth(SMALL_FONT_ID, bootingText);
-  const int bootTextH = renderer.getLineHeight(SMALL_FONT_ID);
-  const int bootTextX = (pageWidth - bootTextW) / 2;
   const int bootTextY = cardY + cardH + 16;
-  const int bootPad = 6;
-  renderer.fillRect(bootTextX - bootPad, bootTextY - bootPad / 2,
-                    bootTextW + bootPad * 2, bootTextH + bootPad, false);
   renderer.drawCenteredText(SMALL_FONT_ID, bootTextY, bootingText);
 
   // ── Version string at bottom-right of screen ──
-  // White pill behind version text for visibility on dark backgrounds
+  // Strip dev/branch suffix (e.g. "1.2.0-dev+branch" → "v1.2.0")
+  std::string version = std::string("v") + CROSSPOINT_VERSION;
+  const auto dashPos = version.find('-');
+  if (dashPos != std::string::npos) {
+    version = version.substr(0, dashPos);
+  }
   const int versionW =
-      renderer.getTextWidth(SMALL_FONT_ID, CROSSPOINT_VERSION);
-  const int versionH = renderer.getLineHeight(SMALL_FONT_ID);
+      renderer.getTextWidth(SMALL_FONT_ID, version.c_str());
   const int versionX = pageWidth - versionW - 15;
   const int versionY = pageHeight - 25;
-  const int verPad = 4;
-  renderer.fillRect(versionX - verPad, versionY - verPad / 2,
-                    versionW + verPad * 2, versionH + verPad, false);
   renderer.drawText(SMALL_FONT_ID, versionX, versionY,
-                    CROSSPOINT_VERSION, true);
+                    version.c_str(), true);
 }
