@@ -133,6 +133,7 @@ void CrossPointWebServer::begin() {
   server->on("/files", HTTP_GET, [this] { handleFileList(); });
 
   server->on("/api/status", HTTP_GET, [this] { handleStatus(); });
+  server->on("/api/storage", HTTP_GET, [this] { handleStorage(); });
   server->on("/api/files", HTTP_GET, [this] { handleFileListData(); });
   server->on("/download", HTTP_GET, [this] { handleDownload(); });
 
@@ -326,6 +327,26 @@ void CrossPointWebServer::handleStatus() const {
   doc["rssi"] = apMode ? 0 : WiFi.RSSI();
   doc["freeHeap"] = ESP.getFreeHeap();
   doc["uptime"] = millis() / 1000;
+
+  String json;
+  serializeJson(doc, json);
+  server->send(200, "application/json", json);
+}
+
+void CrossPointWebServer::handleStorage() const {
+  const uint32_t bpc = Storage.bytesPerCluster();
+  const auto total = Storage.clusterCount();
+  const int32_t free = Storage.freeClusterCount();
+
+  if (free < 0 || bpc == 0) {
+    server->send(500, "application/json", "{\"error\":\"SD card not available\"}");
+    return;
+  }
+
+  JsonDocument doc;
+  doc["totalBytes"] = static_cast<uint64_t>(total) * bpc;
+  doc["freeBytes"] = static_cast<uint64_t>(free) * bpc;
+  doc["usedBytes"] = static_cast<uint64_t>(total - free) * bpc;
 
   String json;
   serializeJson(doc, json);

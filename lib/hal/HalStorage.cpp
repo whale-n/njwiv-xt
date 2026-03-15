@@ -120,6 +120,10 @@ bool HalStorage::openFileForWrite(const char* moduleName, const String& path, Ha
 
 bool HalStorage::removeDir(const char* path) { HAL_STORAGE_WRAPPED_CALL(removeDir, path); }
 
+uint32_t HalStorage::bytesPerCluster() { StorageLock lock; return SDCard.bytesPerCluster(); }
+uint32_t HalStorage::clusterCount() { StorageLock lock; return SDCard.clusterCount(); }
+int32_t HalStorage::freeClusterCount() { StorageLock lock; return SDCard.freeClusterCount(); }
+
 // HalFile implementation
 // Allow doing file operations while ensuring thread safety via HalStorage's mutex.
 // Please keep the list below in sync with the HalFile.h header

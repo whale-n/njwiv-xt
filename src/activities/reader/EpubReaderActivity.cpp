@@ -380,6 +380,64 @@ void EpubReaderActivity::onReaderMenuConfirm(EpubReaderMenuActivity::MenuAction 
       requestUpdate();
       break;
     }
+    case EpubReaderMenuActivity::MenuAction::SAVE_PAGE: {
+      if (section && section->currentPage >= 0 && section->currentPage < section->pageCount) {
+        auto p = section->loadPageFromSectionFile();
+        if (p) {
+          std::string fullText;
+          for (const auto& el : p->elements) {
+            if (el->getTag() == TAG_PageLine) {
+              const auto& line = static_cast<const PageLine&>(*el);
+              if (line.getBlock()) {
+                const auto& words = line.getBlock()->getWords();
+                for (const auto& w : words) {
+                  if (!fullText.empty()) fullText += " ";
+                  fullText += w;
+                }
+                fullText += "\n";
+              }
+            }
+          }
+          if (!fullText.empty()) {
+            // Build filename: /saved_pages/<title>_ch<spine>_p<page>.txt
+            std::string title = epub->getTitle();
+            // Sanitize title for FAT32 filename (keep alphanumeric, spaces, hyphens)
+            for (auto& c : title) {
+              if (!isalnum(c) && c != ' ' && c != '-' && c != '_') c = '_';
+            }
+            if (title.length() > 40) title = title.substr(0, 40);
+
+            const std::string dir = "/saved_pages";
+            if (!Storage.exists(dir.c_str())) {
+              Storage.mkdir(dir.c_str());
+            }
+            const std::string filename = dir + "/" + title +
+                "_ch" + std::to_string(currentSpineIndex) +
+                "_p" + std::to_string(section->currentPage) + ".txt";
+
+            FsFile file;
+            if (Storage.openFileForWrite("SAVE", filename.c_str(), file)) {
+              file.write(reinterpret_cast<const uint8_t*>(fullText.c_str()), fullText.size());
+              file.close();
+              LOG_DBG("SAVE", "Page saved to %s", filename.c_str());
+            } else {
+              LOG_ERR("SAVE", "Failed to write %s", filename.c_str());
+            }
+
+            // Visual feedback: brief border flash (same pattern as screenshot)
+            if (renderer.storeBwBuffer()) {
+              renderer.drawRect(6, 6, HalDisplay::DISPLAY_HEIGHT - 12, HalDisplay::DISPLAY_WIDTH - 12, 2, true);
+              renderer.displayBuffer();
+              delay(500);
+              renderer.restoreBwBuffer();
+              renderer.displayBuffer(HalDisplay::RefreshMode::HALF_REFRESH);
+            }
+          }
+        }
+      }
+      requestUpdate();
+      break;
+    }
     case EpubReaderMenuActivity::MenuAction::SYNC: {
       if (KOREADER_STORE.hasCredentials()) {
         const int currentPage = section ? section->currentPage : 0;

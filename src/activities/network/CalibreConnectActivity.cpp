@@ -6,14 +6,11 @@
 #include <WiFi.h>
 #include <esp_task_wdt.h>
 
+#include "CrossPointSettings.h"
 #include "MappedInputManager.h"
 #include "WifiSelectionActivity.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
-
-namespace {
-constexpr const char* HOSTNAME = "crosspoint";
-}  // namespace
 
 void CalibreConnectActivity::onEnter() {
   Activity::onEnter();
@@ -74,9 +71,9 @@ void CalibreConnectActivity::startWebServer() {
   state = CalibreConnectState::SERVER_STARTING;
   requestUpdate();
 
-  if (MDNS.begin(HOSTNAME)) {
+  if (MDNS.begin(SETTINGS.deviceHostname)) {
     // mDNS is optional for the Calibre plugin but still helpful for users.
-    LOG_DBG("CAL", "mDNS started: http://%s.local/", HOSTNAME);
+    LOG_DBG("CAL", "mDNS started: http://%s.local/", SETTINGS.deviceHostname);
   }
 
   webServer.reset(new CrossPointWebServer());

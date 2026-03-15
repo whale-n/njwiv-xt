@@ -185,6 +185,8 @@ class CrossPointSettings {
   char opdsServerUrl[128] = "";
   char opdsUsername[64] = "";
   char opdsPassword[64] = "";
+  // Device hostname for mDNS (appears as <hostname>.local on the network)
+  char deviceHostname[32] = "njwiv_XT";
   // Hide battery percentage
   uint8_t hideBatteryPercentage = HIDE_NEVER;
   // Long-press chapter skip on side buttons

@@ -33,6 +33,29 @@
 #include "fontIds.h"
 #include "images/NjwivLogo120.h"
 
+// ── Halo text helpers ──────────────────────────────────────────────
+// Draw text with a 1px white outline for readability on any background.
+// Renders the same text at 8 surrounding offsets in white (clearing pixels),
+// then draws the center text in black. Works on both light and dark areas
+// of the dithered sleep-screen background image.
+static void drawTextWithHalo(const GfxRenderer& r, int fontId,
+                             int x, int y, const char* text) {
+  for (int dy = -1; dy <= 1; dy++) {
+    for (int dx = -1; dx <= 1; dx++) {
+      if (dx == 0 && dy == 0) continue;
+      r.drawText(fontId, x + dx, y + dy, text, false);  // white outline
+    }
+  }
+  r.drawText(fontId, x, y, text, true);  // black center
+}
+
+static void drawCenteredTextWithHalo(const GfxRenderer& r, int fontId,
+                                     int y, const char* text) {
+  const int w = r.getTextWidth(fontId, text);
+  const int x = (r.getScreenWidth() - w) / 2;
+  drawTextWithHalo(r, fontId, x, y, text);
+}
+
 void BootActivity::onEnter() {
   Activity::onEnter();
 
@@ -236,11 +259,10 @@ void BootActivity::renderLoadingCard() const {
   renderer.drawIcon(NjwivLogo120, logoX, logoY, logoSize, logoSize);
 
   // ── "loading..." below the card ──
-  // Rendered directly without background pill — the card provides
-  // enough visual anchoring and pills looked heavy on device.
+  // White halo outline ensures readability on any dithered background.
   const char* bootingText = "loading...";
   const int bootTextY = cardY + cardH + 16;
-  renderer.drawCenteredText(SMALL_FONT_ID, bootTextY, bootingText);
+  drawCenteredTextWithHalo(renderer, SMALL_FONT_ID, bootTextY, bootingText);
 
   // ── Version string at bottom-right of screen ──
   // Strip dev/branch suffix (e.g. "1.2.0-dev+branch" → "v1.2.0")
@@ -253,6 +275,6 @@ void BootActivity::renderLoadingCard() const {
       renderer.getTextWidth(SMALL_FONT_ID, version.c_str());
   const int versionX = pageWidth - versionW - 15;
   const int versionY = pageHeight - 25;
-  renderer.drawText(SMALL_FONT_ID, versionX, versionY,
-                    version.c_str(), true);
+  drawTextWithHalo(renderer, SMALL_FONT_ID, versionX, versionY,
+                   version.c_str());
 }

@@ -9,6 +9,7 @@
 
 #include <cstddef>
 
+#include "CrossPointSettings.h"
 #include "MappedInputManager.h"
 #include "NetworkModeSelectionActivity.h"
 #include "WifiSelectionActivity.h"
@@ -21,7 +22,6 @@ namespace {
 // AP Mode configuration
 constexpr const char* AP_SSID = "CrossPoint-Reader";
 constexpr const char* AP_PASSWORD = nullptr;  // Open network for ease of use
-constexpr const char* AP_HOSTNAME = "crosspoint";
 constexpr uint8_t AP_CHANNEL = 1;
 constexpr uint8_t AP_MAX_CONNECTIONS = 4;
 constexpr int QR_CODE_WIDTH = 198;
@@ -160,8 +160,8 @@ void CrossPointWebServerActivity::onWifiSelectionComplete(const bool connected) 
     isApMode = false;
 
     // Start mDNS for hostname resolution
-    if (MDNS.begin(AP_HOSTNAME)) {
-      LOG_DBG("WEBACT", "mDNS started: http://%s.local/", AP_HOSTNAME);
+    if (MDNS.begin(SETTINGS.deviceHostname)) {
+      LOG_DBG("WEBACT", "mDNS started: http://%s.local/", SETTINGS.deviceHostname);
     }
 
     // Start the web server
@@ -218,8 +218,8 @@ void CrossPointWebServerActivity::startAccessPoint() {
   LOG_DBG("WEBACT", "IP: %s", connectedIP.c_str());
 
   // Start mDNS for hostname resolution
-  if (MDNS.begin(AP_HOSTNAME)) {
-    LOG_DBG("WEBACT", "mDNS started: http://%s.local/", AP_HOSTNAME);
+  if (MDNS.begin(SETTINGS.deviceHostname)) {
+    LOG_DBG("WEBACT", "mDNS started: http://%s.local/", SETTINGS.deviceHostname);
   } else {
     LOG_DBG("WEBACT", "WARNING: mDNS failed to start");
   }
@@ -400,7 +400,7 @@ void CrossPointWebServerActivity::renderServerRunning() const {
                       EpdFontFamily::BOLD);
     startY += height10 + metrics.verticalSpacing * 2;
 
-    std::string hostnameUrl = std::string("http://") + AP_HOSTNAME + ".local/";
+    std::string hostnameUrl = std::string("http://") + SETTINGS.deviceHostname + ".local/";
     std::string ipUrl = tr(STR_OR_HTTP_PREFIX) + connectedIP + "/";
 
     // Show QR code for URL
@@ -433,7 +433,7 @@ void CrossPointWebServerActivity::renderServerRunning() const {
     startY += height10 + 5;
 
     // Also show hostname URL
-    std::string hostnameUrl = std::string(tr(STR_OR_HTTP_PREFIX)) + AP_HOSTNAME + ".local/";
+    std::string hostnameUrl = std::string(tr(STR_OR_HTTP_PREFIX)) + SETTINGS.deviceHostname + ".local/";
     renderer.drawCenteredText(SMALL_FONT_ID, startY, hostnameUrl.c_str(), true);
   }
 

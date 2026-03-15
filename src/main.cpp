@@ -286,10 +286,13 @@ void setup() {
 
   setupDisplayAndFonts();
 
-  activityManager.goToBoot();
-
+  // Load persisted state BEFORE boot screen renders so BootActivity
+  // can read APP_STATE.lastSleepImage and reuse the same image shown
+  // at last sleep (matching boot background to sleep background).
   APP_STATE.loadFromFile();
   RECENT_BOOKS.loadFromFile();
+
+  activityManager.goToBoot();
 
   // Boot to home screen if no book is open, last sleep was not from reader, back button is held, or reader activity
   // crashed (indicated by readerActivityLoadCount > 0)
