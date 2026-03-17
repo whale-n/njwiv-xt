@@ -8,6 +8,7 @@
 
 #include <algorithm>
 
+#include "../game/BlackjackActivity.h"
 #include "../util/ConfirmationActivity.h"
 #include "MappedInputManager.h"
 #include "components/UITheme.h"
@@ -102,6 +103,11 @@ void FileBrowserActivity::loadFiles() {
   }
   root.close();
   sortFileList(files);
+
+  // Inject virtual game entries when browsing /games
+  if (basepath == "/games" || basepath == "/games/") {
+    files.insert(files.begin(), "Blackjack");
+  }
 }
 
 void FileBrowserActivity::onEnter() {
@@ -180,6 +186,12 @@ void FileBrowserActivity::loop() {
     } else {
       // --- SHORT PRESS ACTION: OPEN/NAVIGATE ---
       if (basepath.back() != '/') basepath += "/";
+
+      // Check for virtual game entries
+      if ((basepath == "/games/" || basepath == "/games") && entry == "Blackjack") {
+        activityManager.goToBlackjack();
+        return;
+      }
 
       if (isDirectory) {
         basepath += entry.substr(0, entry.length() - 1);
