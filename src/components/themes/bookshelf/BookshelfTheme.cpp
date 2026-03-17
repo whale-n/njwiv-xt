@@ -22,25 +22,25 @@
 
 namespace {
 // Cover Flow layout constants
-constexpr int kCenterCoverMaxW = 180;
-constexpr int kCenterCoverH = 260;
-constexpr int kSideCoverMaxW = 110;
-constexpr int kSideCoverH = 170;
-constexpr int kCoverGap = 16;
+constexpr int kCenterCoverMaxW = 170;
+constexpr int kCenterCoverH = 230;
+constexpr int kSideCoverMaxW = 100;
+constexpr int kSideCoverH = 150;
+constexpr int kCoverGap = 14;
 constexpr int kSelBorderWidth = 2;
-constexpr int kSelPadding = 6;
+constexpr int kSelPadding = 5;
 constexpr int kCornerRadius = 8;
-constexpr int kTextGap = 10;
+constexpr int kTextGap = 8;
 constexpr int kDotSize = 4;
 constexpr int kDotSpacing = 10;
-constexpr int kTopPad = 45;
+constexpr int kTopPad = 15;
 
 // Card grid constants
 constexpr int kCardCols = 2;
-constexpr int kCardSpacing = 10;
-constexpr int kCardHeight = 110;
+constexpr int kCardSpacing = 8;
+constexpr int kCardHeight = 100;
 constexpr int kCardCornerRadius = 8;
-constexpr int kCardIconSize = 36;
+constexpr int kCardIconSize = 32;
 
 const uint8_t* cardIconForName(UIIcon icon) {
   switch (icon) {
