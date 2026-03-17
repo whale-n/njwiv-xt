@@ -46,6 +46,11 @@ void HomeActivity::loadRecentBooks(int maxBooks) {
       continue;
     }
 
+    // Only show book formats with covers in the carousel (skip plain text)
+    if (!FsHelpers::hasEpubExtension(book.path) && !FsHelpers::hasXtcExtension(book.path)) {
+      continue;
+    }
+
     recentBooks.push_back(book);
   }
 }
@@ -173,16 +178,86 @@ void HomeActivity::freeCoverBuffer() {
 
 void HomeActivity::loop() {
   const int menuCount = getMenuItemCount();
+  const int bookCount = static_cast<int>(recentBooks.size());
+  const bool isCoverFlow =
+      SETTINGS.uiTheme == CrossPointSettings::UI_THEME::COVER_FLOW && bookCount > 0;
 
-  buttonNavigator.onNext([this, menuCount] {
-    selectorIndex = ButtonNavigator::nextIndex(selectorIndex, menuCount);
-    requestUpdate();
-  });
+  if (isCoverFlow) {
+    // Two-zone navigation: front Left/Right for books, side Up/Down for menu
+    const bool inBooks = selectorIndex < bookCount;
 
-  buttonNavigator.onPrevious([this, menuCount] {
-    selectorIndex = ButtonNavigator::previousIndex(selectorIndex, menuCount);
-    requestUpdate();
-  });
+    if (inBooks) {
+      coverFlowBookIndex = selectorIndex;
+      if (mappedInput.wasReleased(MappedInputManager::Button::Right)) {
+        if (selectorIndex < bookCount - 1) {
+          selectorIndex++;
+          coverFlowBookIndex = selectorIndex;
+          requestUpdate();
+        }
+      }
+      if (mappedInput.wasReleased(MappedInputManager::Button::Left)) {
+        if (selectorIndex > 0) {
+          selectorIndex--;
+          coverFlowBookIndex = selectorIndex;
+          requestUpdate();
+        }
+      }
+      // Side Down jumps to first menu item
+      if (mappedInput.wasReleased(MappedInputManager::Button::Down)) {
+        selectorIndex = bookCount;
+        requestUpdate();
+      }
+    } else {
+      // Menu zone: 2-column card grid navigation
+      const int menuItemCount = menuCount - bookCount;
+      int menuIdx = selectorIndex - bookCount;
+      const int col = menuIdx % 2;
+
+      // Side Down: move down one row (+2), wrap to first book
+      if (mappedInput.wasReleased(MappedInputManager::Button::Down)) {
+        if (menuIdx + 2 < menuItemCount) {
+          selectorIndex += 2;
+        } else {
+          selectorIndex = coverFlowBookIndex;  // Wrap back to remembered book
+        }
+        requestUpdate();
+      }
+      // Side Up: move up one row (-2), jump back to books if at top
+      if (mappedInput.wasReleased(MappedInputManager::Button::Up)) {
+        if (menuIdx - 2 >= 0) {
+          selectorIndex -= 2;
+        } else {
+          selectorIndex = coverFlowBookIndex;  // Jump back to remembered book
+        }
+        requestUpdate();
+      }
+      // Front Right: next card (wraps across rows)
+      if (mappedInput.wasReleased(MappedInputManager::Button::Right)) {
+        if (menuIdx + 1 < menuItemCount) {
+          selectorIndex++;
+          requestUpdate();
+        }
+      }
+      // Front Left: previous card (wraps across rows)
+      if (mappedInput.wasReleased(MappedInputManager::Button::Left)) {
+        if (menuIdx > 0) {
+          selectorIndex--;
+          requestUpdate();
+        }
+      }
+    }
+  } else {
+    // Standard flat navigation for other themes
+    buttonNavigator.onNext([this, menuCount] {
+      selectorIndex = ButtonNavigator::nextIndex(selectorIndex, menuCount);
+      requestUpdate();
+    });
+
+    buttonNavigator.onPrevious([this, menuCount] {
+      selectorIndex = ButtonNavigator::previousIndex(selectorIndex, menuCount);
+      requestUpdate();
+    });
+  }
 
   if (mappedInput.wasReleased(MappedInputManager::Button::Confirm)) {
     // Calculate dynamic indices based on which options are available
@@ -220,8 +295,13 @@ void HomeActivity::render(RenderLock&&) {
 
   GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.homeTopPadding}, nullptr);
 
+  // Pass coverFlowBookIndex when in menu zone so carousel stays on the remembered book
+  const bool coverFlowActive =
+      SETTINGS.uiTheme == CrossPointSettings::UI_THEME::COVER_FLOW && !recentBooks.empty();
+  const int coverDisplayIndex =
+      (coverFlowActive && selectorIndex >= static_cast<int>(recentBooks.size())) ? coverFlowBookIndex : selectorIndex;
   GUI.drawRecentBookCover(renderer, Rect{0, metrics.homeTopPadding, pageWidth, metrics.homeCoverTileHeight},
-                          recentBooks, selectorIndex, coverRendered, coverBufferStored, bufferRestored,
+                          recentBooks, coverDisplayIndex, coverRendered, coverBufferStored, bufferRestored,
                           std::bind(&HomeActivity::storeCoverBuffer, this));
 
   // Build menu items dynamically
@@ -235,16 +315,17 @@ void HomeActivity::render(RenderLock&&) {
     menuIcons.insert(menuIcons.begin() + 2, Library);
   }
 
+  const int menuY = metrics.homeTopPadding + metrics.homeCoverTileHeight + metrics.verticalSpacing;
+  const int menuH = pageHeight - metrics.buttonHintsHeight - menuY;
   GUI.drawButtonMenu(
-      renderer,
-      Rect{0, metrics.homeTopPadding + metrics.homeCoverTileHeight + metrics.verticalSpacing, pageWidth,
-           pageHeight - (metrics.headerHeight + metrics.homeTopPadding + metrics.verticalSpacing * 2 +
-                         metrics.buttonHintsHeight)},
+      renderer, Rect{0, menuY, pageWidth, menuH},
       static_cast<int>(menuItems.size()), selectorIndex - recentBooks.size(),
       [&menuItems](int index) { return std::string(menuItems[index]); },
       [&menuIcons](int index) { return menuIcons[index]; });
 
-  const auto labels = mappedInput.mapLabels("", tr(STR_SELECT), tr(STR_DIR_UP), tr(STR_DIR_DOWN));
+  const auto labels = coverFlowActive
+                          ? mappedInput.mapLabels("", tr(STR_SELECT), tr(STR_DIR_LEFT), tr(STR_DIR_RIGHT))
+                          : mappedInput.mapLabels("", tr(STR_SELECT), tr(STR_DIR_UP), tr(STR_DIR_DOWN));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
 
   renderer.displayBuffer();
