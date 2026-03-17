@@ -11,6 +11,7 @@
 #include "CrossPointSettings.h"
 #include "RecentBooksStore.h"
 #include "components/UITheme.h"
+#include "components/icons/book.h"
 #include "components/icons/cover.h"
 #include "components/icons/folder.h"
 #include "components/icons/library.h"
@@ -53,6 +54,10 @@ const uint8_t* cardIconForName(UIIcon icon) {
       return TransferIcon;
     case UIIcon::Library:
       return LibraryIcon;
+    case UIIcon::Games:
+      return BookIcon;  // TODO: custom dice/gamepad icon
+    case UIIcon::Stats:
+      return RecentIcon;  // TODO: custom bar chart icon
     default:
       return nullptr;
   }

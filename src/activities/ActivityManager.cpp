@@ -12,6 +12,7 @@
 #include "reader/ReaderActivity.h"
 #include "settings/SettingsActivity.h"
 #include "game/BlackjackActivity.h"
+#include "game/VocabQuizActivity.h"
 #include "util/FullScreenMessageActivity.h"
 
 void ActivityManager::begin() {
@@ -198,6 +199,8 @@ void ActivityManager::goToFullScreenMessage(std::string message, EpdFontFamily::
 }
 
 void ActivityManager::goToBlackjack() { replaceActivity(std::make_unique<BlackjackActivity>(renderer, mappedInput)); }
+
+void ActivityManager::goToVocabQuiz() { replaceActivity(std::make_unique<VocabQuizActivity>(renderer, mappedInput)); }
 
 void ActivityManager::goHome() { replaceActivity(std::make_unique<HomeActivity>(renderer, mappedInput)); }
 

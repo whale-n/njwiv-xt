@@ -40,6 +40,7 @@ class BlackjackActivity final : public Activity {
   static constexpr int kNumBetIncrements = 5;
   int chips = kStartingChips;
   int currentBet = 0;
+  int lastBet = 0;  // remembers bet amount for result display (currentBet resets after payout)
   int betIncrementIndex = 2;  // start at 50
 
   // State

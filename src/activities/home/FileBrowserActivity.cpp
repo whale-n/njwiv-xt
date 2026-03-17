@@ -106,6 +106,7 @@ void FileBrowserActivity::loadFiles() {
 
   // Inject virtual game entries when browsing /games
   if (basepath == "/games" || basepath == "/games/") {
+    files.insert(files.begin(), "Vocab Quiz");
     files.insert(files.begin(), "Blackjack");
   }
 }
@@ -188,9 +189,15 @@ void FileBrowserActivity::loop() {
       if (basepath.back() != '/') basepath += "/";
 
       // Check for virtual game entries
-      if ((basepath == "/games/" || basepath == "/games") && entry == "Blackjack") {
-        activityManager.goToBlackjack();
-        return;
+      if (basepath == "/games/" || basepath == "/games") {
+        if (entry == "Blackjack") {
+          activityManager.goToBlackjack();
+          return;
+        }
+        if (entry == "Vocab Quiz") {
+          activityManager.goToVocabQuiz();
+          return;
+        }
       }
 
       if (isDirectory) {

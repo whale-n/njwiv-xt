@@ -76,6 +76,10 @@ const uint8_t* iconForName(UIIcon icon, int size) {
         return WifiIcon;
       case UIIcon::Hotspot:
         return HotspotIcon;
+      case UIIcon::Games:
+        return BookIcon;  // TODO: custom dice/gamepad icon
+      case UIIcon::Stats:
+        return RecentIcon;  // TODO: custom bar chart icon
       default:
         return nullptr;
     }
